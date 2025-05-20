@@ -293,7 +293,7 @@ for model_name, (model, param_grid) in models.items():
 
 <img width="1168" alt="Screenshot 2025-05-18 at 5 36 02 pm" src="https://github.com/user-attachments/assets/6f43fa08-2089-454d-990f-1c8689d8430e" />
 
-- The winning model is **RandomForest** with 100 decision trees and a maximum deepth of 8, as it achieved the highest F1-score **(0.7087)** and also has the **highest Accuracy and Precision** among all models.
+- The winning model is **RandomForest** with 100 decision trees and a maximum depth of 8, as it achieved the highest F1-score **(0.7087)** and also has the **highest Accuracy and Precision** among all models.
 - The model is quite reliable when it predicts that a customer will churn (high precision) however, it misses some actual churners (recall is not very high). Overall, it is a useful and solid model for decision-making, such as launching targeted retention campaigns.
   
 <sub>**Note:** The best model is selected based on the **F1-score** because provides a good balance between Precision and Recall when there is class imbalance (few churners).
@@ -320,3 +320,66 @@ for i, v in enumerate(importances_sorted.head(10)):
 plt.tight_layout()
 plt.show()
 ```
+#### Extracting most common rules
+
+<img width="1529" alt="Screenshot 2025-05-18 at 5 28 01 pm" src="https://github.com/user-attachments/assets/a7f9e15b-7c21-4cf4-bbeb-946426a63075" />
+
+Most common rules were extracted and adapted to human language for business presentation purposes.
+
+```
+def extract_rules_for_class(tree, feature_names, class_value=1):
+    tree_ = tree.tree_
+    feature_name = [
+        feature_names[i] if i != _tree.TREE_UNDEFINED else "undefined!"
+        for i in tree_.feature
+    ]
+
+    paths = []
+
+    def recurse(node, path):
+        if tree_.feature[node] != _tree.TREE_UNDEFINED:
+            name = feature_name[node]
+            threshold = tree_.threshold[node]
+            recurse(tree_.children_left[node], path + [f"({name} <= {threshold:.2f})"])
+            recurse(tree_.children_right[node], path + [f"({name} > {threshold:.2f})"])
+        else:
+            pred_class = np.argmax(tree_.value[node])
+            if pred_class == class_value:
+                rule = " AND ".join(path)
+                paths.append(rule)
+
+    recurse(0, [])
+    return paths
+
+# Extraer reglas de todos los árboles
+best_rf = best_estimators['RandomForest']
+feature_names = X_train_rfc.columns.tolist()
+
+all_churn_rules = []
+
+for i, tree in enumerate(best_rf.estimators_):
+    churn_rules = extract_rules_for_class(tree, feature_names, class_value=1)
+    all_churn_rules.extend(churn_rules)
+
+# Contar frecuencia de cada regla
+rule_counter = Counter(all_churn_rules)
+
+# Mostrar las reglas más frecuentes
+print("Top 10 reglas más comunes que predicen churn (Exited = 1):\n")
+for rule, count in rule_counter.most_common(10):
+    print(f"Veces: {count}")
+    print(f"Regla: {rule}\n")
+```
+### 2.6 Next steps:
+
+#### RandomForest model improve:
+
+- To improve the performance of the RandomForest model it is recommended to do more hyperparameter tuning to n_estimators, max_depth, min_samples_split, min_samples_leaf and max_features parameters.
+- Adjust classification threshold, instead of the default **0.5**, trying with thresholds like 0.4 or 0.6 could be useful to optimize recall.
+- It is recommended to explore more advanced class balancing techniques as **SMOTE + Tomek Links** or **SMOTE-ENN**.
+
+#### Alternative Models to Try
+
+- **LightGBM:** Faster and often more accurate than RandomForest. Additionaly, handles unbalanced datasets well (scale_pos_weight), and supports early stopping and categorical variables.
+
+- **XGBoost:** Another powerful gradient boosting algorithm. Well-established for classification problems with structured/tabular data.
