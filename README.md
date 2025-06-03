@@ -372,7 +372,7 @@ for rule, count in rule_counter.most_common(10):
 ```
 ### 2.6 Next steps:
 
-#### RandomForest model improve:
+#### RandomForest model improvement:
 
 - To improve the performance of the RandomForest model it is recommended to do more hyperparameter tuning to n_estimators, max_depth, min_samples_split, min_samples_leaf and max_features parameters.
 - Adjust classification threshold, instead of the default **0.5**, trying with thresholds like 0.4 or 0.6 could be useful to optimize recall.
